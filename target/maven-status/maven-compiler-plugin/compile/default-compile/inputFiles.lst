@@ -1,2 +1,9 @@
-C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\WebConfiguration.java
+C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\configuration\DataSourceConfiguration.java
+C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\configuration\RestConfiguration.java
 C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\controller\HomeController.java
+C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\controller\UserController.java
+C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\model\User.java
+C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\repository\JdbcNativeUserRepository.java
+C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\repository\UserRepository.java
+C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\service\UserService.java
+C:\Users\vin12\IdeaProjects\blog-back-app\src\main\java\ru.yandex.practicum\WebConfiguration.java

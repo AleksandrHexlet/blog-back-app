@@ -1,10 +1,10 @@
-WAR проект для Tomcat 10 с Spring MVC Структура проекта text blog-back-app/ ├── src/ │ ├── main/ │ │ ├── java/ │ │ │ └── ru/yandex/practicum/ │ │ │ ├── configuration/ │ │ │ │ └── WebConfiguration.java │ │ │ └── controller/ │ │ │ └── HomeController.java │ │ └── webapp/ │ │ └── WEB-INF/ │ │ └── web.xml │ └── test/ ├── pom.xml └── README.md Инструкции по сборке и развёртыванию
+WAR проект для Tomcat 10 с Spring MVC Структура проекта text blog-back-app/ ├── src/ │ ├── main/ │ │ ├── java/ │ │ │ └── ru/yandex/practicum/ │ │ │ ├── ru.yandex.practicum.configuration/ │ │ │ │ └── WebConfiguration.java │ │ │ └── controller/ │ │ │ └── HomeController.java │ │ └── webapp/ │ │ └── WEB-INF/ │ │ └── web.xml │ └── test/ ├── pom.xml └── README.md Инструкции по сборке и развёртыванию
 
-Создание структуры проекта bash mkdir -p blog-back-app/src/main/java/ru/yandex/practicum/{configuration,controller} mkdir -p blog-back-app/src/main/webapp/WEB-INF mkdir -p blog-back-app/src/test cd blog-back-app
+Создание структуры проекта bash mkdir -p blog-back-app/src/main/java/ru/yandex/practicum/{ru.yandex.practicum.configuration,controller} mkdir -p blog-back-app/src/main/webapp/WEB-INF mkdir -p blog-back-app/src/test cd blog-back-app
 Копирование файлов pom.xml — скопировать в корень проекта
 src/main/webapp/WEB-INF/web.xml — DispatcherServlet конфигурация
 
-src/main/java/ru/yandex/practicum/configuration/WebConfiguration.java — Spring конфигурация
+src/main/java/ru/yandex/practicum/ru.yandex.practicum.configuration/WebConfiguration.java — Spring конфигурация
 
 src/main/java/ru/yandex/practicum/controller/HomeController.java — REST контроллер
 

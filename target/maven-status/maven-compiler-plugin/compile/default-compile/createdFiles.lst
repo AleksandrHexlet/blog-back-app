@@ -1,2 +1,9 @@
+ru\yandex\practicum\configuration\RestConfiguration.class
 ru\yandex\practicum\controller\HomeController.class
+ru\yandex\practicum\model\User.class
+ru\yandex\practicum\service\UserService.class
+ru\yandex\practicum\configuration\DataSourceConfiguration.class
+ru\yandex\practicum\repository\JdbcNativeUserRepository.class
+ru\yandex\practicum\controller\UserController.class
 ru\yandex\practicum\WebConfiguration.class
+ru\yandex\practicum\repository\UserRepository.class
