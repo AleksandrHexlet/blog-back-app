@@ -2,7 +2,6 @@ package ru.yandex.practicum.service;
 
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.model.User;
-import ru.yandex.practicum.repository.UserRepository;
 
 import java.util.List;
 
