@@ -48,4 +48,4 @@ public class AppConfig implements WebMvcConfigurer {
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
         configurer.defaultContentType(org.springframework.http.MediaType.APPLICATION_JSON);
     }
-}
+}//TODO: продолжай с blog-details-guide и потом вернешься в setup и доделаешь тесты
