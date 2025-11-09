@@ -1,43 +1,19 @@
 package ru.yandex.practicum.config;
 
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
-import jakarta.persistence.EntityManagerFactory;
+
 import javax.sql.DataSource;
+import jakarta.persistence.EntityManagerFactory;
 import java.util.Properties;
 
 @Configuration
-@ComponentScan(basePackages = {
-        "ru.yandex.practicum.controller",
-        "ru.yandex.practicum.service"
-})
-@EnableJpaRepositories(basePackages = "ru.yandex.practicum.dao")
-@EnableTransactionManagement
-@EnableWebMvc
-public class AppConfig implements WebMvcConfigurer {
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        // Добавить поддержку Java 8 date/time
-        mapper.registerModule(new JavaTimeModule());
-        // Форматировать дату как строку вместо массива
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return mapper;
-    }
+public class PersistenceConfig {
 
     @Bean
     public DataSource dataSource() {
@@ -59,6 +35,7 @@ public class AppConfig implements WebMvcConfigurer {
         emf.setJpaVendorAdapter(jpaVendorAdapter);
 
         Properties jpaProperties = new Properties();
+        jpaProperties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
         jpaProperties.setProperty("hibernate.hbm2ddl.auto", "update");
         jpaProperties.setProperty("hibernate.format_sql", "true");
         jpaProperties.setProperty("hibernate.use_sql_comments", "true");

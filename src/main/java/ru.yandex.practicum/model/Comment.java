@@ -1,61 +1,53 @@
 package ru.yandex.practicum.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.data.relational.core.mapping.Column;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * Сущность Comment (Комментарий) представляет комментарий к посту.
- *
- * Каждый комментарий связан с одним постом и содержит текст комментария.
- * Связь поддерживается через внешний ключ (post_id).
- *
- * @author Alex
- * @version 1.0
- * @since 1.0
- *
- * @see Post
- */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Table("comments")
+@Entity
+@Table(name = "comments")
 public class Comment {
 
-    /**
-     * Уникальный идентификатор комментария.
-     */
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Идентификатор поста, к которому относится этот комментарий.
-     * Используется как внешний ключ для связи с таблицей posts.
-     */
-    @Column("post_id")
-    private Long postId;
-
-    /**
-     * Текст комментария.
-     * Обязательное поле, может содержать неограниченное количество текста.
-     */
-    @Column("text")
+    @Column(columnDefinition = "TEXT")
     private String text;
 
-    /**
-     * Дата и время создания комментария.
-     * Устанавливается автоматически при создании.
-     */
-    @Column("created_at")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * Дата и время последнего обновления комментария.
-     */
-    @Column("updated_at")
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getText() { return text; }
+    public void setText(String text) { this.text = text; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Post getPost() { return post; }
+    public void setPost(Post post) { this.post = post; }
 }

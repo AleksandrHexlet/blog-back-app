@@ -1,14 +1,24 @@
 # IDE
 .idea/
 .vscode/
+*.iml
+*.iws
+*.ipr
 *.swp
 *.swo
 *~
 
 # Maven
 target/
-*.jar
-*.war
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.m2/
 
 # OS
 .DS_Store
@@ -18,6 +28,12 @@ Thumbs.db
 logs/
 *.log
 
-# Local files
-*.local
-*.env
+# Environment
+.env
+.env.local
+
+# Build
+*.class
+*.jar
+*.war
+*.ear

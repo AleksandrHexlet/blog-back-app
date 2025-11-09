@@ -1,91 +1,79 @@
 package ru.yandex.practicum.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
-import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.data.relational.core.mapping.Column;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Сущность Post (Пост) представляет запись в блоге.
- *
- * Данный класс определяет структуру поста в приложении блога,
- * включая его содержимое, теги, количество лайков и комментариев.
- *
- * Поля базы данных маппируются с использованием Spring Data JDBC аннотаций.
- *
- * @author Alex
- * @version 1.0
- * @since 1.0
- *
- * @see PostTag
- * @see Comment
- * @see Image
- */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Table("posts")
+@Entity
+@Table(name = "posts")
 public class Post {
 
-    /**
-     * Уникальный идентификатор поста в базе данных.
-     * Автоматически генерируется при создании записи.
-     */
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Название (заголовок) поста.
-     * Обязательное поле, максимум 255 символов.
-     */
-    @Column("title")
+    @Column(nullable = false)
     private String title;
 
-    /**
-     * Основной текст поста в формате Markdown.
-     * Может содержать неограниченное количество текста.
-     */
-    @Column("text")
+    @Column(columnDefinition = "TEXT")
     private String text;
 
-    /**
-     * Количество лайков этого поста.
-     * По умолчанию 0, увеличивается при вызове endpoint лайков.
-     */
-    @Column("likes_count")
-    private Integer likesCount;
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] image;
 
-    /**
-     * Количество комментариев к этому посту.
-     * Автоматически обновляется при добавлении/удалении комментариев.
-     */
-    @Column("comments_count")
-    private Integer commentsCount;
+    @Column
+    private String tags;
 
-    /**
-     * Дата и время создания поста.
-     * Устанавливается автоматически при создании записи в БД.
-     */
-    @Column("created_at")
+    @Column(name = "likes_count")
+    private int likesCount;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * Дата и время последнего обновления поста.
-     * Обновляется при изменении содержимого поста.
-     */
-    @Column("updated_at")
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    /**
-     * Список тегов, связанных с этим постом.
-     * Это временное поле, не сохраняется напрямую в таблице posts.
-     * Загружается из таблицы post_tags через отдельный запрос.
-     */
-    @Transient
-    private List<String> tags;
+    // One-to-Many связь: один Post имеет много Comments
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Comment> comments = new ArrayList<>();
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getText() { return text; }
+    public void setText(String text) { this.text = text; }
+
+    public byte[] getImage() { return image; }
+    public void setImage(byte[] image) { this.image = image; }
+
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
+
+    public int getLikesCount() { return likesCount; }
+    public void setLikesCount(int likesCount) { this.likesCount = likesCount; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public List<Comment> getComments() { return comments; }
+    public void setComments(List<Comment> comments) { this.comments = comments; }
 }
