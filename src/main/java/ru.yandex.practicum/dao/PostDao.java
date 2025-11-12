@@ -1,9 +1,18 @@
 package ru.yandex.practicum.dao;
 
 import ru.yandex.practicum.model.Post;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
-@Repository
-public interface PostDao extends JpaRepository<Post, Long> {
+import java.util.List;
+import java.util.Optional;
+
+public interface PostDao {
+    List<Post> findAll();
+
+    Optional<Post> findById(Long id);
+
+    Post save(Post post);
+
+    void deleteById(Long id);
+
+    Integer incrementLikes(Long id);
 }

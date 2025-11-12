@@ -1,22 +1,24 @@
--- Posts table
+-- Создание таблицы POSTS
 CREATE TABLE IF NOT EXISTS posts (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(255) NOT NULL,
-    text LONGTEXT,
-    tags VARCHAR(1000),
-    likes_count INT NOT NULL DEFAULT 0,
-    image LONGBLOB,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    text TEXT NOT NULL,
+    author_id INT,
+    likes_count INT DEFAULT 0,
+    image VARCHAR(255),
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Comments table
+-- Создание таблицы COMMENTS
 CREATE TABLE IF NOT EXISTS comments (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    text LONGTEXT NOT NULL,
-    post_id BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-    INDEX idx_post_id (post_id)
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    post_id INT NOT NULL,
+    text TEXT NOT NULL,
+    author_id INT,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id)
 );
+
+-- Создание индексов
+CREATE INDEX idx_posts_author ON posts(author_id);
+CREATE INDEX idx_comments_post ON comments(post_id);

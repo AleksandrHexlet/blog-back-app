@@ -1,11 +1,16 @@
 package ru.yandex.practicum.dao;
 
 import ru.yandex.practicum.model.Comment;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
-@Repository
-public interface CommentDao extends JpaRepository<Comment, Long> {
-    List<Comment> findByPostId(Long postId);
+/**
+ * ✅ CommentDao интерфейс
+ */
+public interface CommentDao {
+    List<Comment> findAllByPostId(Long postId);
+    Optional<Comment> findByIdAndPostId(Long id, Long postId);
+    Comment save(Comment comment);
+    void deleteByIdAndPostId(Long id, Long postId);
+    void deleteById(Long id);
 }

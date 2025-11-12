@@ -1,6 +1,5 @@
-package ru.yandex.practicum.dto;
+package ru.yandex.practicum.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,10 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CommentDto {
+public class PostTag {
     private Long id;
-    private String text;
-
-    @JsonProperty("postId")
     private Long postId;
+    private String tag;
 }

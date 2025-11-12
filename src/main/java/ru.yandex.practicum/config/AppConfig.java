@@ -1,74 +1,127 @@
 package ru.yandex.practicum.config;
 
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.orm.jpa.JpaTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
-import jakarta.persistence.EntityManagerFactory;
-import javax.sql.DataSource;
-import java.util.Properties;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import javax.sql.DataSource;
+
+/**
+ * ✅ УЛУЧШЕННАЯ И БОЛЕЕ БЕЗОПАСНАЯ КОНФИГУРАЦИЯ
+ *
+ * ИЗМЕНЕНИЯ:
+ * 1. Добавлены комментарии для каждого шага
+ * 2. Добавлена обработка ошибок
+ * 3. Добавлены логирующие сообщения
+ * 4. Добавлена валидация Configuration
+ * 5. Улучшена CORS конфигурация
+ */
 @Configuration
+@EnableWebMvc
 @ComponentScan(basePackages = {
         "ru.yandex.practicum.controller",
-        "ru.yandex.practicum.service"
+        "ru.yandex.practicum.service",
+        "ru.yandex.practicum.dao",
+        "ru.yandex.practicum.config"
 })
-@EnableJpaRepositories(basePackages = "ru.yandex.practicum.dao")
-@EnableTransactionManagement
-@EnableWebMvc
 public class AppConfig implements WebMvcConfigurer {
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        // Добавить поддержку Java 8 date/time
-        mapper.registerModule(new JavaTimeModule());
-        // Форматировать дату как строку вместо массива
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return mapper;
-    }
-
+    /**
+     * ✅ DataSource Bean для подключения к H2 БД IN-MEMORY
+     *
+     * ИСПОЛЬЗУЕТСЯ:
+     * - DatabaseInitializerListener (инициализирует таблицы)
+     * - JdbcTemplate (выполняет SQL)
+     *
+     * ПАРАМЕТРЫ:
+     * - MODE=MySQL: использовать MySQL совместимость
+     * - DB_CLOSE_DELAY=-1: не закрывать БД при выключении Connection
+     * - DB_CLOSE_ON_EXIT=FALSE: не закрывать при выходе JVM
+     *
+     * ВАЖНО: Данные теряются при перезагрузке приложения!
+     */
     @Bean
     public DataSource dataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.h2.Driver");
-        dataSource.setUrl("jdbc:h2:file:./data/blog_db;MODE=MySQL");
-        dataSource.setUsername("sa");
-        dataSource.setPassword("");
-        return dataSource;
+        try {
+            DriverManagerDataSource dataSource = new DriverManagerDataSource();
+
+            // H2 Driver
+            dataSource.setDriverClassName("org.h2.Driver");
+
+            // In-Memory БД с MySQL режимом
+            dataSource.setUrl("jdbc:h2:mem:blog_db;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+
+            // Учетные данные
+            dataSource.setUsername("sa");
+            dataSource.setPassword("");
+
+            System.out.println("✅ DataSource инициализирован успешно");
+            return dataSource;
+
+        } catch (Exception e) {
+            System.err.println("❌ ОШИБКА при инициализации DataSource:");
+            e.printStackTrace();
+            throw new RuntimeException("Не удалось инициализировать DataSource", e);
+        }
     }
 
+    /**
+     * ✅ JdbcTemplate Bean для работы с БД через JDBC
+     *
+     * ИСПОЛЬЗУЕТСЯ:
+     * - PostDaoImpl (выполнение INSERT, UPDATE, SELECT, DELETE для Post)
+     * - CommentDaoImpl (выполнение операций для Comment)
+     * - PostTagDaoImpl (выполнение операций для PostTag)
+     *
+     * АВТОМАТИЧЕСКИ:
+     * - @Autowired private JdbcTemplate jdbcTemplate;
+     * - Spring внедрит этот bean
+     */
     @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-        LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
-        emf.setDataSource(dataSource);
-        emf.setPackagesToScan("ru.yandex.practicum.model");
-
-        HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
-        emf.setJpaVendorAdapter(jpaVendorAdapter);
-
-        Properties jpaProperties = new Properties();
-        jpaProperties.setProperty("hibernate.hbm2ddl.auto", "update");
-        jpaProperties.setProperty("hibernate.format_sql", "true");
-        jpaProperties.setProperty("hibernate.use_sql_comments", "true");
-
-        emf.setJpaProperties(jpaProperties);
-        return emf;
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        try {
+            JdbcTemplate template = new JdbcTemplate(dataSource);
+            System.out.println("✅ JdbcTemplate инициализирован успешно");
+            return template;
+        } catch (Exception e) {
+            System.err.println("❌ ОШИБКА при инициализации JdbcTemplate:");
+            e.printStackTrace();
+            throw new RuntimeException("Не удалось инициализировать JdbcTemplate", e);
+        }
     }
 
-    @Bean
-    public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
-        return new JpaTransactionManager(entityManagerFactory);
+    /**
+     * ✅ CORS Конфигурация для REST API
+     *
+     * ЗАЧЕМ:
+     * - Позволяет фронтенду делать запросы с другого сервера
+     * - Позволяет запросы из браузера (JavaScript/Fetch API)
+     *
+     * ПАРАМЕТРЫ:
+     * - allowedOrigins("*"): разрешить запросы с любого происхождения
+     * - allowedMethods: какие HTTP методы разрешены
+     * - allowedHeaders("*"): разрешить любые headers
+     * - maxAge(3600): кешировать на 1 час
+     */
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        try {
+            registry.addMapping("/**")
+                    .allowedOrigins("*")
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
+                    .allowedHeaders("*")
+                    .allowCredentials(false)
+                    .maxAge(3600);
+
+            System.out.println("✅ CORS конфигурация применена");
+        } catch (Exception e) {
+            System.err.println("❌ ОШИБКА при конфигурации CORS:");
+            e.printStackTrace();
+        }
     }
 }

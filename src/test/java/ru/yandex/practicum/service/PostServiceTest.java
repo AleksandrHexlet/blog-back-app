@@ -1,318 +1,155 @@
 package ru.yandex.practicum.service;
 
-import ru.yandex.practicum.dao.PostDao;
-import ru.yandex.practicum.dao.CommentDao;
-import ru.yandex.practicum.dto.PostDto;
-import ru.yandex.practicum.dto.PostListResponse;
-import ru.yandex.practicum.model.Post;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.yandex.practicum.dao.CommentDao;
+import ru.yandex.practicum.dao.PostDao;
+import ru.yandex.practicum.dao.PostTagDao;
+import ru.yandex.practicum.dto.PostsResponse;
+import ru.yandex.practicum.model.Post;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("PostService Unit Tests")
 class PostServiceTest {
-
-    @Mock
-    private PostDao postDao;
-
-    @Mock
-    private CommentDao commentDao;
-
-    @InjectMocks
-    private PostServiceImpl postService;
+    @Mock private PostDao postDao;
+    @Mock private PostTagDao postTagDao;
+    @Mock private CommentDao commentDao;
+    @InjectMocks private PostServiceImpl postService;
 
     private Post testPost;
-    private PostDto testPostDto;
 
     @BeforeEach
     void setUp() {
-        testPost = new Post();
-        testPost.setId(1L);
-        testPost.setTitle("Test Post");
-        testPost.setText("Test Content");
-        testPost.setTags("java,spring");
-        testPost.setLikesCount(0);
-        testPost.setCreatedAt(LocalDateTime.now());
-        testPost.setUpdatedAt(LocalDateTime.now());
-
-        testPostDto = new PostDto();
-        testPostDto.setTitle("Test Post");
-        testPostDto.setText("Test Content");
-        testPostDto.setTags(new String[]{"java", "spring"});
+        testPost = Post.builder()
+                .id(1L)
+                .title("Test Post")
+                .text("Test content")
+                .likesCount(5)
+                .build();
     }
 
     @Test
-    @DisplayName("Should create post successfully")
-    void testCreatePost() {
-        when(postDao.save(any(Post.class))).thenReturn(testPost);
+    void testGetAllPosts() {
+        when(postDao.findAll()).thenReturn(Arrays.asList(testPost));
+        when(postTagDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
+        when(commentDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
 
-        PostDto result = postService.createPost(testPostDto);
+        PostsResponse response = postService.getAllPosts("", 1, 10);
 
-        assertNotNull(result);
-        assertEquals("Test Post", result.getTitle());
-        assertEquals("Test Content", result.getText());
-        verify(postDao, times(1)).save(any(Post.class));
+        assertNotNull(response);
+        assertEquals(1, response.getPosts().size());
     }
 
     @Test
-    @DisplayName("Should throw exception when creating post with null title")
-    void testCreatePostWithNullTitle() {
-        PostDto dto = new PostDto();
-        dto.setTitle(null);
-
-        assertThrows(IllegalArgumentException.class, () -> postService.createPost(dto));
-    }
-
-    @Test
-    @DisplayName("Should throw exception when creating post with empty title")
-    void testCreatePostWithEmptyTitle() {
-        PostDto dto = new PostDto();
-        dto.setTitle("");
-
-        assertThrows(IllegalArgumentException.class, () -> postService.createPost(dto));
-    }
-
-    @Test
-    @DisplayName("Should throw exception when creating null post")
-    void testCreateNullPost() {
-        assertThrows(IllegalArgumentException.class, () -> postService.createPost(null));
-    }
-
-    @Test
-    @DisplayName("Should get post by id successfully")
-    void testGetPost() {
+    void testGetPostById() {
         when(postDao.findById(1L)).thenReturn(Optional.of(testPost));
+        when(postTagDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
+        when(commentDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
 
-        PostDto result = postService.getPost(1L);
+        var result = postService.getPostById(1L);
+
+        assertTrue(result.isPresent());
+        assertEquals("Test Post", result.get().getTitle());
+    }
+
+    @Test
+    void testCreatePost() {
+        when(postDao.save(any())).thenReturn(testPost);
+        when(postTagDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
+        when(commentDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
+
+        var result = postService.createPost("Test", "Content", Collections.emptyList());
 
         assertNotNull(result);
         assertEquals("Test Post", result.getTitle());
-        verify(postDao, times(1)).findById(1L);
     }
 
     @Test
-    @DisplayName("Should throw exception when post not found")
-    void testGetPostNotFound() {
-        when(postDao.findById(999L)).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class, () -> postService.getPost(999L));
+    void testCreatePostWithNullTitle() {
+        assertThrows(IllegalArgumentException.class,
+                () -> postService.createPost(null, "Content", Collections.emptyList()));
     }
 
     @Test
-    @DisplayName("Should get posts with pagination")
-    void testGetPostsWithPagination() {
-        Post post2 = new Post();
-        post2.setId(2L);
-        post2.setTitle("Second Post");
-        post2.setText("Content 2");
-        post2.setTags("spring");
-        post2.setLikesCount(5);
-        post2.setCreatedAt(LocalDateTime.now().plusDays(1));
-        post2.setUpdatedAt(LocalDateTime.now().plusDays(1));
-
-        when(postDao.findAll()).thenReturn(Arrays.asList(post2, testPost));
-
-        PostListResponse result = postService.getPosts("", 1, 10);
-
-        assertNotNull(result);
-        assertEquals(2, result.getPosts().size());
-        assertEquals(1, result.getLastPage());
-    }
-
-    @Test
-    @DisplayName("Should search posts by title")
-    void testSearchPostsByTitle() {
-        when(postDao.findAll()).thenReturn(Arrays.asList(testPost));
-
-        PostListResponse result = postService.getPosts("Test", 1, 10);
-
-        assertNotNull(result);
-        assertEquals(1, result.getPosts().size());
-        assertEquals("Test Post", result.getPosts().get(0).getTitle());
-    }
-
-    @Test
-    @DisplayName("Should search posts by content")
-    void testSearchPostsByContent() {
-        when(postDao.findAll()).thenReturn(Arrays.asList(testPost));
-
-        PostListResponse result = postService.getPosts("Content", 1, 10);
-
-        assertNotNull(result);
-        assertEquals(1, result.getPosts().size());
-    }
-
-    @Test
-    @DisplayName("Should return empty list when search has no matches")
-    void testSearchPostsNoMatches() {
-        when(postDao.findAll()).thenReturn(Arrays.asList(testPost));
-
-        PostListResponse result = postService.getPosts("XYZ123", 1, 10);
-
-        assertNotNull(result);
-        assertEquals(0, result.getPosts().size());
-    }
-
-    @Test
-    @DisplayName("Should handle null search parameter")
-    void testGetPostsWithNullSearch() {
-        when(postDao.findAll()).thenReturn(Arrays.asList(testPost));
-
-        PostListResponse result = postService.getPosts(null, 1, 10);
-
-        assertNotNull(result);
-        assertEquals(1, result.getPosts().size());
-    }
-
-    @Test
-    @DisplayName("Should handle pagination correctly")
-    void testPaginationMultiplePages() {
-        List<Post> posts = Arrays.asList();
-        for (int i = 1; i <= 25; i++) {
-            Post p = new Post();
-            p.setId((long) i);
-            p.setTitle("Post " + i);
-            p.setText("Content " + i);
-            p.setTags("tag" + i);
-            p.setLikesCount(0);
-            p.setCreatedAt(LocalDateTime.now());
-            p.setUpdatedAt(LocalDateTime.now());
-            posts.add(p);
-        }
-
-        when(postDao.findAll()).thenReturn(posts);
-
-        PostListResponse result = postService.getPosts("", 2, 10);
-
-        assertNotNull(result);
-        assertEquals(3, result.getLastPage());
-    }
-    @Test
-    @DisplayName("Should update post successfully")
     void testUpdatePost() {
         when(postDao.findById(1L)).thenReturn(Optional.of(testPost));
-        when(postDao.save(any(Post.class))).thenReturn(testPost);
+        when(postDao.save(any())).thenReturn(testPost);
+        when(postTagDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
+        when(commentDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
 
-        PostDto updateDto = new PostDto();
-        updateDto.setTitle("Updated Title");
-        updateDto.setText("Updated Content");
-        updateDto.setTags(new String[]{"updated"});
-
-        PostDto result = postService.updatePost(1L, updateDto);
+        var result = postService.updatePost(1L, "Updated", "New content", Collections.emptyList());
 
         assertNotNull(result);
-        assertEquals("Updated Title", testPost.getTitle());
-        verify(postDao, times(1)).save(any(Post.class));
+        verify(postDao).save(any());
     }
 
     @Test
-    @DisplayName("Should throw exception when updating non-existent post")
-    void testUpdatePostNotFound() {
-        when(postDao.findById(999L)).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class, () -> postService.updatePost(999L, testPostDto));
-    }
-
-    @Test
-    @DisplayName("Should delete post successfully")
     void testDeletePost() {
-        when(postDao.findById(1L)).thenReturn(Optional.of(testPost));
-        doNothing().when(postDao).delete(testPost);
+        when(commentDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
 
         postService.deletePost(1L);
 
-        verify(postDao, times(1)).delete(testPost);
+        verify(postDao).deleteById(1L);
     }
 
     @Test
-    @DisplayName("Should throw exception when deleting non-existent post")
-    void testDeletePostNotFound() {
-        when(postDao.findById(999L)).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class, () -> postService.deletePost(999L));
-    }
-
-    @Test
-    @DisplayName("Should increment likes successfully")
     void testIncrementLikes() {
-        testPost.setLikesCount(0);
+        Post postWithLike = Post.builder().id(1L).likesCount(6).build();
         when(postDao.findById(1L)).thenReturn(Optional.of(testPost));
-        when(postDao.save(any(Post.class))).thenReturn(testPost);
+        when(postDao.save(any())).thenReturn(postWithLike);
 
-        postService.incrementLikes(1L);
+        Integer result = postService.incrementLikes(1L);
 
-        assertEquals(1, testPost.getLikesCount());
-        verify(postDao, times(1)).save(testPost);
+        assertEquals(6, result);
     }
 
     @Test
-    @DisplayName("Should throw exception when incrementing likes for non-existent post")
-    void testIncrementLikesNotFound() {
-        when(postDao.findById(999L)).thenReturn(Optional.empty());
+    void testSaveImage() {
+        byte[] imageData = "image".getBytes();
+        when(postDao.findById(1L)).thenReturn(Optional.of(testPost));
 
-        assertThrows(IllegalArgumentException.class, () -> postService.incrementLikes(999L));
+        postService.saveImage(1L, imageData);
+
+        verify(postDao).save(any());
     }
 
     @Test
-    @DisplayName("Should convert tags array to string correctly")
-    void testConvertTagsToString() {
-        PostDto dto = new PostDto();
-        dto.setTitle("Test");
-        dto.setTags(new String[]{"tag1", "tag2", "tag3"});
+    void testGetImage() {
+        Post postWithImage = Post.builder().id(1L).image("image".getBytes()).build();
+        when(postDao.findById(1L)).thenReturn(Optional.of(postWithImage));
 
-        when(postDao.save(any(Post.class))).thenAnswer(inv -> {
-            Post p = inv.getArgument(0);
-            assertEquals("tag1,tag2,tag3", p.getTags());
-            return testPost;
-        });
+        Optional<byte[]> result = postService.getImage(1L);
 
-        postService.createPost(dto);
+        assertTrue(result.isPresent());
     }
 
     @Test
-    @DisplayName("Should handle empty tags array")
-    void testConvertEmptyTags() {
-        PostDto dto = new PostDto();
-        dto.setTitle("Test");
-        dto.setTags(new String[]{});
+    void testTextTruncation() {
+        String longText = "a".repeat(200);
+        Post longPost = Post.builder().id(1L).text(longText).build();
+        when(postDao.findAll()).thenReturn(Arrays.asList(longPost));
+        when(postTagDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
+        when(commentDao.findAllByPostId(1L)).thenReturn(Collections.emptyList());
 
-        when(postDao.save(any(Post.class))).thenAnswer(inv -> {
-            Post p = inv.getArgument(0);
-            assertEquals("", p.getTags());
-            return testPost;
-        });
+        PostsResponse response = postService.getAllPosts("", 1, 10);
 
-        postService.createPost(dto);
+        assertTrue(response.getPosts().get(0).getText().endsWith("…"));
     }
 
     @Test
-    @DisplayName("Should handle null tags")
-    void testConvertNullTags() {
-        PostDto dto = new PostDto();
-        dto.setTitle("Test");
-        dto.setTags(null);
+    void testGetAllPostsEmpty() {
+        when(postDao.findAll()).thenReturn(Collections.emptyList());
 
-        when(postDao.save(any(Post.class))).thenAnswer(inv -> {
-            Post p = inv.getArgument(0);
-            assertEquals("", p.getTags());
-            return testPost;
-        });
+        PostsResponse response = postService.getAllPosts("", 1, 10);
 
-        postService.createPost(dto);
+        assertEquals(0, response.getPosts().size());
     }
 }

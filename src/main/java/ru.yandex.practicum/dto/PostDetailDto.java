@@ -1,19 +1,21 @@
 package ru.yandex.practicum.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CommentDto {
+public class PostDetailDto {
     private Long id;
+    private String title;
     private String text;
-
-    @JsonProperty("postId")
-    private Long postId;
+    private List<String> tags;
+    private Integer likesCount;
+    private Integer commentsCount;
 }

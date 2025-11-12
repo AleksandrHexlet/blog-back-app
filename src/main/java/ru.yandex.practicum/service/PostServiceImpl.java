@@ -1,197 +1,195 @@
 package ru.yandex.practicum.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.dao.CommentDao;
 import ru.yandex.practicum.dao.PostDao;
-import ru.yandex.practicum.dto.PostDto;
-import ru.yandex.practicum.dto.PostListResponse;
+import ru.yandex.practicum.dao.PostTagDao;
+import ru.yandex.practicum.dto.PostDetailDto;
+import ru.yandex.practicum.dto.PostListItemDto;
+import ru.yandex.practicum.dto.PostsResponse;
+import ru.yandex.practicum.model.Comment;
 import ru.yandex.practicum.model.Post;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.model.PostTag;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-/**
- * Реализация сервиса для постов.
- */
 @Service
-@Transactional
 public class PostServiceImpl implements PostService {
+    @Autowired
+    private PostDao postDao;
+    @Autowired
+    private PostTagDao postTagDao;
+    @Autowired
+    private CommentDao commentDao;
 
-    private final PostDao postDao;
-    private final CommentDao commentDao;
+    @Override
+    public PostsResponse getAllPosts(String search, int pageNumber, int pageSize) {
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-    public PostServiceImpl(PostDao postDao, CommentDao commentDao) {
-        this.postDao = postDao;
-        this.commentDao = commentDao;
+        List<Post> allPosts = StreamSupport.stream(postDao.findAll().spliterator(), false)
+                .filter(p -> search == null || search.isEmpty() ||
+                        p.getTitle().toLowerCase().contains(search.toLowerCase()) ||
+                        p.getText().toLowerCase().contains(search.toLowerCase()))
+                .collect(Collectors.toList());
+
+        long totalCount = allPosts.size();
+        int start = (pageNumber - 1) * pageSize;
+        int end = Math.min(start + pageSize, allPosts.size());
+
+        List<Post> pagedPosts = allPosts.isEmpty() ? new ArrayList<>() : allPosts.subList(start, end);
+        List<PostListItemDto> postDtos = pagedPosts.stream()
+                .map(this::convertToListItemDto)
+                .collect(Collectors.toList());
+
+        int lastPage = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
+
+        return PostsResponse.builder()
+                .posts(postDtos)
+                .hasPrev(pageNumber > 1)
+                .hasNext(pageNumber < lastPage)
+                .lastPage(lastPage)
+                .build();
     }
 
     @Override
-    @Transactional
-    public PostDto createPost(PostDto postDto) {
-        if (postDto == null || postDto.getTitle() == null || postDto.getTitle().isEmpty()) {
-            throw new IllegalArgumentException("Title cannot be empty");
-        }
+    public Optional<PostDetailDto> getPostById(Long id) {
+        if (id == null || id <= 0) return Optional.empty();
+        return postDao.findById(id).map(this::convertToDetailDto);
+    }
 
-        Post post = new Post();
-        post.setTitle(postDto.getTitle());
-        post.setText(postDto.getText());
-        post.setTags(convertTagsToString(postDto.getTags()));
-        post.setLikesCount(0);
+    @Override
+    public PostDetailDto createPost(String title, String text, List<String> tags) {
+        if (title == null || text == null || title.isEmpty() || text.isEmpty())
+            throw new IllegalArgumentException("Title and text are required");
+
+        Post post = Post.builder()
+                .title(title)
+                .text(text)
+                .likesCount(0)
+                .build();
 
         Post savedPost = postDao.save(post);
-        return convertToDto(savedPost);
+
+        if (savedPost.getId() == null) {
+            throw new RuntimeException("Failed to save post - no ID generated");
+        }
+
+        if (tags != null && !tags.isEmpty()) {
+            for (String tag : tags) {
+                postTagDao.save(new PostTag(null, savedPost.getId(), tag));
+            }
+        }
+
+        return convertToDetailDto(savedPost);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public PostDto getPost(Long id) {
-        Post post = postDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+    public PostDetailDto updatePost(Long id, String title, String text, List<String> tags) {
+        if (id == null || id <= 0) throw new IllegalArgumentException("Invalid post ID");
 
-        return convertToDto(post);
-    }
-    @Override
-    @Transactional(readOnly = true)
-    public PostListResponse getPosts(String search, int pageNumber, int pageSize) {
-        try {
-            final String searchTerm = search == null ? "" : search;
+        Post existingPost = postDao.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
 
-            // Получить ВСЕ посты
-            List<Post> allPosts = postDao.findAll();
+        existingPost.setTitle(title);
+        existingPost.setText(text);
+        Post updatedPost = postDao.save(existingPost);
 
-            // Если нет постов - вернуть пустой ответ
-            if (allPosts == null) {
-                allPosts = new ArrayList<>();
+        postTagDao.deleteByPostId(id);
+        if (tags != null && !tags.isEmpty()) {
+            for (String tag : tags) {
+                postTagDao.save(new PostTag(null, id, tag));
             }
-
-            // Фильтр по поиску
-            List<Post> filteredPosts = allPosts.stream()
-                    .filter(p -> {
-                        String title = p.getTitle() != null ? p.getTitle().toLowerCase() : "";
-                        String text = p.getText() != null ? p.getText().toLowerCase() : "";
-                        String searchLower = searchTerm.toLowerCase();
-                        return title.contains(searchLower) || text.contains(searchLower);
-                    })
-                    .collect(Collectors.toList());
-
-            // Сортировка по дате создания (убывание - новые в начале)
-            filteredPosts.sort((p1, p2) -> {
-                if (p1.getCreatedAt() == null || p2.getCreatedAt() == null) {
-                    return 0;
-                }
-                return p2.getCreatedAt().compareTo(p1.getCreatedAt());
-            });
-
-            // Пагинация
-            long totalCount = filteredPosts.size();
-
-            // Если нет постов
-            if (totalCount == 0) {
-                PostListResponse response = new PostListResponse();
-                response.setPosts(new ArrayList<>());
-                response.setHasPrev(false);
-                response.setHasNext(false);
-                response.setLastPage(1);
-                return response;
-            }
-
-            int lastPage = (int) Math.ceil((double) totalCount / pageSize);
-
-            // Валидация pageNumber
-            if (pageNumber < 1) {
-                pageNumber = 1;
-            }
-            if (pageNumber > lastPage) {
-                pageNumber = lastPage;
-            }
-
-            int startIdx = (pageNumber - 1) * pageSize;
-            int endIdx = Math.min(startIdx + pageSize, (int) totalCount);
-
-            List<Post> pagePostList = new ArrayList<>(filteredPosts.subList(startIdx, endIdx));
-
-            List<PostDto> postDtos = pagePostList.stream()
-                    .map(this::convertToDto)
-                    .collect(Collectors.toList());
-
-            PostListResponse response = new PostListResponse();
-            response.setPosts(postDtos);
-            response.setHasPrev(pageNumber > 1);
-            response.setHasNext(pageNumber < lastPage);
-            response.setLastPage(lastPage);
-
-            return response;
-
-        } catch (Exception e) {
-            System.err.println("Ошибка в getPosts: " + e.getMessage());
-            e.printStackTrace();
-
-            PostListResponse response = new PostListResponse();
-            response.setPosts(new ArrayList<>());
-            response.setHasPrev(false);
-            response.setHasNext(false);
-            response.setLastPage(1);
-            return response;
         }
+
+        return convertToDetailDto(updatedPost);
     }
 
     @Override
-    @Transactional
-    public PostDto updatePost(Long id, PostDto postDto) {
-        Post post = postDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
-
-        if (postDto.getTitle() != null && !postDto.getTitle().isEmpty()) {
-            post.setTitle(postDto.getTitle());
-        }
-        if (postDto.getText() != null) {
-            post.setText(postDto.getText());
-        }
-        if (postDto.getTags() != null) {
-            post.setTags(convertTagsToString(postDto.getTags()));
-        }
-
-        Post updatedPost = postDao.save(post);
-        return convertToDto(updatedPost);
-    }
-
-    @Override
-    @Transactional
     public void deletePost(Long id) {
-        Post post = postDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
-        postDao.delete(post);
+        if (id == null || id <= 0) throw new IllegalArgumentException("Invalid post ID");
+
+        List<Comment> comments = commentDao.findAllByPostId(id);
+        for (Comment comment : comments) {
+            commentDao.deleteById(comment.getId());
+        }
+
+        postTagDao.deleteByPostId(id);
+        postDao.deleteById(id);
     }
 
     @Override
-    @Transactional
-    public void incrementLikes(Long id) {
+    public Integer incrementLikes(Long id) {
         Post post = postDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
-        post.setLikesCount(post.getLikesCount() + 1);
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        post.setLikesCount((post.getLikesCount() == null ? 0 : post.getLikesCount()) + 1);
+        Post updated = postDao.save(post);
+        return updated.getLikesCount();
+    }
+
+    @Override
+    public void saveImage(Long postId, byte[] imageData) {
+        Post post = postDao.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        post.setImage(imageData);
         postDao.save(post);
     }
 
-    private PostDto convertToDto(Post post) {
-        PostDto dto = new PostDto();
-        dto.setId(post.getId());
-        dto.setTitle(post.getTitle());
-        dto.setText(post.getText());
-        dto.setTags(convertStringToTags(post.getTags()));
-        dto.setLikesCount(post.getLikesCount());
-        dto.setCreatedAt(post.getCreatedAt());
-        dto.setUpdatedAt(post.getUpdatedAt());
-        return dto;
+    @Override
+    public Optional<byte[]> getImage(Long postId) {
+        return postDao.findById(postId)
+                .map(Post::getImage)
+                .filter(img -> img != null && img.length > 0);
     }
 
-    private String convertTagsToString(String[] tags) {
-        if (tags == null || tags.length == 0) return "";
-        return String.join(",", tags);
+    private PostListItemDto convertToListItemDto(Post post) {
+        String truncatedText = post.getText();
+        if (truncatedText.length() > 128) {
+            truncatedText = truncatedText.substring(0, 128) + "…";
+        }
+
+        List<String> tags = postTagDao.findAllByPostId(post.getId())
+                .stream()
+                .map(PostTag::getTag)
+                .collect(Collectors.toList());
+
+        int commentsCount = (int) StreamSupport.stream(
+                commentDao.findAllByPostId(post.getId()).spliterator(), false
+        ).count();
+
+        return PostListItemDto.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .text(truncatedText)
+                .tags(tags)
+                .likesCount(post.getLikesCount() == null ? 0 : post.getLikesCount())
+                .commentsCount(commentsCount)
+                .build();
     }
 
-    private String[] convertStringToTags(String tags) {
-        if (tags == null || tags.isEmpty()) return new String[0];
-        return tags.split(",");
+    private PostDetailDto convertToDetailDto(Post post) {
+        List<String> tags = postTagDao.findAllByPostId(post.getId())
+                .stream()
+                .map(PostTag::getTag)
+                .collect(Collectors.toList());
+
+        int commentsCount = (int) StreamSupport.stream(
+                commentDao.findAllByPostId(post.getId()).spliterator(), false
+        ).count();
+
+        return PostDetailDto.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .text(post.getText())
+                .tags(tags)
+                .likesCount(post.getLikesCount() == null ? 0 : post.getLikesCount())
+                .commentsCount(commentsCount)
+                .build();
     }
 }

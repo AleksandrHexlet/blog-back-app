@@ -1,53 +1,24 @@
 package ru.yandex.practicum.service;
 
-import ru.yandex.practicum.dto.PostDto;
-import ru.yandex.practicum.dto.PostListResponse;
+import ru.yandex.practicum.dto.PostDetailDto;
+import ru.yandex.practicum.dto.PostsResponse;
 
-/**
- * Интерфейс сервиса для постов.
- */
+import java.util.Optional;
+
 public interface PostService {
+    PostsResponse getAllPosts(String search, int pageNumber, int pageSize);
 
-    /**
-     * Создать новый пост
-     * @param postDto данные поста (title, text, tags)
-     * @return созданный пост с ID
-     */
-    PostDto createPost(PostDto postDto);
+    Optional<PostDetailDto> getPostById(Long id);
 
-    /**
-     * Получить пост по ID
-     * @param id ID поста
-     * @return данные поста
-     */
-    PostDto getPost(Long id);
+    PostDetailDto createPost(String title, String text, java.util.List<String> tags);
 
-    /**
-     * Получить все посты с фильтром и пагинацией
-     * @param search текст для поиска (по названию и содержанию)
-     * @param pageNumber номер страницы (начиная с 1)
-     * @param pageSize размер страницы
-     * @return список постов с метаданными пагинации
-     */
-    PostListResponse getPosts(String search, int pageNumber, int pageSize);
+    PostDetailDto updatePost(Long id, String title, String text, java.util.List<String> tags);
 
-    /**
-     * Обновить пост
-     * @param id ID поста
-     * @param postDto новые данные поста
-     * @return обновленный пост
-     */
-    PostDto updatePost(Long id, PostDto postDto);
-
-    /**
-     * Удалить пост
-     * @param id ID поста
-     */
     void deletePost(Long id);
 
-    /**
-     * Увеличить количество лайков поста
-     * @param id ID поста
-     */
-    void incrementLikes(Long id);
+    Integer incrementLikes(Long id);
+
+    void saveImage(Long postId, byte[] imageData);
+
+    Optional<byte[]> getImage(Long postId);
 }

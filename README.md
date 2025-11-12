@@ -1,116 +1,76 @@
 # Blog Backend Application
 
-## Быстрый старт
+## Overview
+Spring Framework 6.1 REST API for Blog application with Spring Data JDBC.
 
-### 1. Требования
-- Java 21 (JDK)
-- Maven 3.9+
-- Apache Tomcat 10.1+
+## Technology Stack
+- **Java 21**
+- **Spring Framework 6.1**
+- **Spring Data JDBC** (NOT JPA)
+- **Tomcat 10 Servlet Container**
+- **H2 Embedded Database**
+- **Maven 3.8+**
+- **JUnit 5**
+- **Mockito**
 
-### 2. Сборка
-git clone https://github.com/your-username/blog-back-app.git
-cd blog-back-app
+## Project Structure
+src/main/java/ru/yandex/practicum/
+├── model/ (Post, Comment)
+├── dao/ (PostDao, CommentDao)
+├── dto/ (PostDto, CommentDto)
+├── service/ (PostService, CommentService, ImageService)
+└── controller/ (PostController, CommentController)
+
+
+## Build & Run
+
+### Prerequisites
+- JDK 21+
+- Maven 3.8+
+
+### Build Project
+```bash
 mvn clean package
 
-### 3. Развертывание на Tomcat
-cp target/blog-back-app.war $CATALINA_HOME/webapps/
-$CATALINA_HOME/bin/startup.sh
+Run Tests
+mvn clean test
 
-### 4. Проверка
+Deploy to Tomcat
+cp target/blog-back-app.war $TOMCAT_HOME/webapps/ROOT.war
+$TOMCAT_HOME/bin/startup.sh
+
+Access Application
 http://localhost:8080/api/posts
 
-### 5. Запуск тестов
-mvn test
+### API Endpoints
+Posts
+GET /api/posts?search=&pageNumber=1&pageSize=5
 
+GET /api/posts/{id}
 
-## Структура проекта
-- `src/main/java` - исходный код
-- `src/main/resources` - конфигурация и SQL скрипты
-- `src/test/java` - тесты
-- `pom.xml` - конфигурация Maven
+POST /api/posts
 
-## REST API Endpoints
+PUT /api/posts/{id}
 
-### Посты
-- `GET /api/posts?search=&pageNumber=1&pageSize=5` - список постов
-- `POST /api/posts` - создать пост
-- `POST /api/posts/{id}` - получить пост
-- `PUT /api/posts/{id}` - обновить пост
-- `DELETE /api/posts/{id}` - удалить пост
-- `POST /api/posts/{id}/likes` - увеличить лайки
-- `PUT /api/posts/{id}/image` - загрузить изображение
-- `GET /api/posts/{id}/image` - получить изображение
+DELETE /api/posts/{id}
 
-### Комментарии
-- `GET /api/posts/{postId}/comments` - список комментариев
-- `GET /api/posts/{postId}/comments/{commentId}` - получить комментарий
-- `POST /api/posts/{postId}/comments` - создать комментарий
-- `PUT /api/posts/{postId}/comments/{commentId}` - обновить комментарий
-- `DELETE /api/posts/{postId}/comments/{commentId}` - удалить комментарий
+POST /api/posts/{id}/likes
 
-## Примеры запросов Postman
+PUT /api/posts/{id}/image
 
-### Создать пост
-POST http://localhost:8080/api/posts
-Content-Type: application/json
+GET /api/posts/{id}/image
 
-{
-"title": "Мой пост",
-"text": "Текст поста",
-"tags": ["java", "spring"]
-}
+Comments
+GET /api/posts/{postId}/comments
 
+GET /api/posts/{postId}/comments/{commentId}
 
-### Получить список постов
-GET http://localhost:8080/api/posts?search=&pageNumber=1&pageSize=5
+POST /api/posts/{postId}/comments
 
-### Добавить комментарий
-POST http://localhost:8080/api/posts/1/comments
-Content-Type: application/json
+PUT /api/posts/{postId}/comments/{commentId}
 
-{
-"text": "Отличный пост!",
-"postId": 1
-}
+DELETE /api/posts/{postId}/comments/{commentId}
 
-## Технологический стек
-- Spring Framework 6.1.14
-- Hibernate 6.4.4
-- H2 Database (по умолчанию)
-- PostgreSQL (для production)
-- JUnit 5 и Mockito (тестирование)
-- Maven (сборка)
-
-## Контактная информация
-Email: support@yandex-practicum.ru
-
-Версия: 1.0.0
-Это полный готовый код проекта! Теперь вы можете:
-
-Создать структуру папок:
-
-blog-back-app/
-├── src/
-│   ├── main/
-│   │   ├── java/ru/yandex/practicum/
-│   │   │   ├── config/ (поместить все config классы)
-│   │   │   ├── model/ (Post.java, Comment.java)
-│   │   │   ├── dao/ (все DAO классы)
-│   │   │   ├── service/ (все Service классы)
-│   │   │   └── controller/ (все контроллеры)
-│   │   └── resources/ (application.properties, db/, logback.xml)
-│   └── test/
-│       ├── java/ru/yandex/practicum/ (все test классы)
-│       └── resources/ (application-test.properties)
-├── pom.xml
-├── .gitignore
-└── README.md
-Собрать проект:
-
-bash
-mvn clean package
-Развернуть на Tomcat:
-
-bash
-cp target/blog-back-app.war $CATALINA_HOME/webapps/
-$CATALINA_HOME/bin/startup.sh
+Database
+H2 Embedded Database - In-Memory
+Schema automatically created on startup
