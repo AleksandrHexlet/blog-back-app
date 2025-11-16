@@ -30,7 +30,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Результат: build/libs/blog-application-java21.jar
  *
  * @since 1.0.0
- * @author Blog Backend Team
+ * @author Alex
  */
 @SpringBootApplication
 public class BlogApplication {

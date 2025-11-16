@@ -12,7 +12,7 @@ import java.util.List;
  * Используется для работы с тегами прикрепленными к постам.
  *
  * @since 1.0.0
- * @author Blog Backend Team
+ * @author Alex
  */
 @Repository
 public interface PostTagRepository extends CrudRepository<PostTag, Long> {

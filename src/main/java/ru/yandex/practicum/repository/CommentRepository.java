@@ -16,7 +16,7 @@ import java.util.Optional;
  * CommentRepository.java
  * Содержит методы для поиска комментариев по посту и пользователю.
  *
- * @author Blog Backend Team
+ * @author Alex
  * @since 1.0.0
  */
 @Repository
