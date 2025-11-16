@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * - path: URL endpoint который вызвал ошибку
  * - details: Дополнительные детали об ошибке (может быть null)
  *
- * @author Blog Backend Team
+ * @author Alex
  * @since 1.0.0
  */
 public record ErrorResponse(
