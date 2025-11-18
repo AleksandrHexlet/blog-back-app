@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 /**
  * Post entity - неизменяемая запись (record) блога
- * <p>
+ *
  * Поля соответствуют таблице 'posts' в PostgreSQL БД
  */
 @Table("posts")

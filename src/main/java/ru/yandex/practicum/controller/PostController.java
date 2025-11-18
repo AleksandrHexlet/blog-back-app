@@ -265,12 +265,29 @@ class PostCreateRequest {
     private String text;
     private List<String> tags;
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
-    public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
 }
 
 class PostUpdateRequest {
@@ -278,30 +295,69 @@ class PostUpdateRequest {
     private String text;
     private List<String> tags;
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
-    public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
 }
 
 class CommentCreateRequest {
     private String text;
     private String author;
 
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
-    public String getAuthor() { return author; }
-    public void setAuthor(String author) { this.author = author; }
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
 }
 
 class CommentUpdateRequest {
     private String text;
     private String author;
 
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
-    public String getAuthor() { return author; }
-    public void setAuthor(String author) { this.author = author; }
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
 }

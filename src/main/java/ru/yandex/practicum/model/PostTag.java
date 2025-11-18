@@ -3,11 +3,12 @@ package ru.yandex.practicum.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+
 /**
  * PostTag entity представляет тег прикрепленный к посту.
  *
  * Реализована как Java 21 record для обеспечения immutability.
- PostTag.java
+ * PostTag.java
  *
  * Использует Spring Data JDBC аннотации для маппинга на таблицу post_tags.
  *
@@ -16,8 +17,8 @@ import org.springframework.data.relational.core.mapping.Table;
  * - postId: ID поста (foreign key)
  * - tag: Текст тега (не может быть null или пустым)
  *
- * @since 1.0.0
  * @author Alex
+ * @since 1.0.0
  */
 @Table("post_tags")
 public record PostTag(
@@ -35,6 +36,7 @@ public record PostTag(
             throw new IllegalArgumentException("Tag cannot be null or blank");
         }
     }
+
     /**
      * Возвращает тег в нижнем регистре для поиска.
      *
