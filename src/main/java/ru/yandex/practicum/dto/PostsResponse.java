@@ -22,10 +22,11 @@ import java.util.List;
  * @since 1.0.0
  */
 public record PostsResponse(
-        List&lt;PostListItemDto&gt;posts,
+        @JsonProperty("posts") List<PostListItemDto> posts,
         @JsonProperty("hasPrev") boolean hasPrev,
         @JsonProperty("hasNext") boolean hasNext,
-        @JsonProperty("lastPage") int lastPage
+        @JsonProperty("lastPage") int lastPage,
+        @JsonProperty("postsCount") Long postsCount
 ) {
     /**
      * Compact constructor для валидации.

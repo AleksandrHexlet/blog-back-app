@@ -1,4 +1,4 @@
-package ru.yandex.practicum.exception;
+package ru.yandex.practicum.dto;
 
 /**
  * ErrorResponse - DTO для ошибок API

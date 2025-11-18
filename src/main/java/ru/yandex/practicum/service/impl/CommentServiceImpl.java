@@ -4,97 +4,80 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.dto.CommentDto;
 import ru.yandex.practicum.model.Comment;
 import ru.yandex.practicum.repository.CommentRepository;
 import ru.yandex.practicum.service.CommentService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
- * CommentServiceImpl реализует CommentService интерфейс.
- *
- * @author Blog Backend Team
- * @since 1.0.0
+ * CommentServiceImpl - реализация CommentService
  */
 @Slf4j
 @Service
 @Transactional
 public class CommentServiceImpl implements CommentService {
+
     @Autowired
     private CommentRepository commentRepository;
+
     @Override
-    public List<CommentDto> getCommentsByPostId(Long postId) {
-        log.debug("Getting comments for post ID: {}", postId);
-        return commentRepository.findAllByPostId(postId)
-                .stream()
-                .map(this::convertToDto)
-                .toList();
+    public List<Comment> getCommentsByPostId(Long postId) {
+        log.debug("Getting all comments for post ID: {}", postId);
+        List<Comment> comments = (List<Comment>) commentRepository.findAll();
+        return comments.stream()
+                .filter(c -> c.getPostId().equals(postId))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<CommentDto> getCommentByIdAndPostId(Long commentId, Long postId) {
-log.debug("Getting comment ID: {} for post ID: {}", commentId, postId);
-return commentRepository.findByIdAndPostId(commentId,postId)
-            .
+    public Optional<Comment> getCommentById(Long commentId) {
+        log.debug("Getting comment by ID: {}", commentId);
+        return commentRepository.findById(commentId);
+    }
 
-    map(this::convertToDto);
-}
+    @Override
+    public Comment createComment(Comment comment) {
+        log.debug("Creating comment for post ID: {}", comment.getPostId());
+        if (comment.getText() == null || comment.getText().isBlank()) {
+            throw new IllegalArgumentException("Comment text cannot be null or blank");
+        }
+        Comment saved = commentRepository.save(comment);
+        log.info("Comment created with ID: {}", saved.getId());
+        return saved;
+    }
 
-@Override
-public CommentDto createComment(Long postId, String text) {
-    log.debug("Creating comment for post ID: {}", postId);
-    Comment comment = new Comment(
-            null,
-            postId,
-            text,
-            null,
-            LocalDateTime.now()
-    );
-    Comment saved = commentRepository.save(comment);
-    log.info("Comment created with ID: {} for post: {}", saved.id(), postId);
-    return convertToDto(saved);
-}
+    @Override
+    public Comment updateComment(Comment comment) {
+        log.debug("Updating comment ID: {}", comment.getId());
+        if (comment.getId() == null) {
+            throw new IllegalArgumentException("Comment ID cannot be null");
+        }
+        Comment saved = commentRepository.save(comment);
+        log.info("Comment {} updated successfully", comment.getId());
+        return saved;
+    }
 
-@Override
-public CommentDto updateComment(Long commentId, Long postId, String text) {
-    log.debug("Updating comment ID: {} for post ID: {}", commentId, postId);
-    Comment comment = commentRepository.findByIdAndPostId(commentId, postId)
-            .orElseThrow(() -> new IllegalArgumentException(
-            "Comment not found with ID: " + commentId + " for post: " + postId
-    ));
-    Comment updated = new Comment(
-            comment.id(),
-            comment.postId(),
-            text,
-            comment.authorId(),
-            comment.createdAt()
-    );
-    Comment saved = commentRepository.save(updated);
-    log.info("Comment {} updated successfully", commentId);
-    return convertToDto(saved);
-}
+    @Override
+    public void deleteComment(Long commentId) {
+        log.debug("Deleting comment ID: {}", commentId);
+        commentRepository.deleteById(commentId);
+        log.info("Comment {} deleted successfully", commentId);
+    }
 
-@Override
-public void deleteComment(Long commentId, Long postId) {
-    log.debug("Deleting comment ID: {} for post ID: {}", commentId, postId);
-    commentRepository.deleteByIdAndPostId(commentId, postId);
-    log.info("Comment {} deleted successfully", commentId);
-}
+    @Override
+    public List<Comment> getAllComments() {
+        log.debug("Getting all comments");
+        return (List<Comment>) commentRepository.findAll();
+    }
 
-/**
- * Конвертирует Comment entity в CommentDto.
- *
- * @param comment entity
- * @return DTO
- */
-private CommentDto convertToDto(Comment comment) {
-    return new CommentDto(
-            comment.id(),
-            comment.text(),
-            comment.postId()
-    );
-}
+    @Override
+    public void deleteByPostId(Long postId) {
+        log.debug("Deleting all comments for post ID: {}", postId);
+        List<Comment> comments = getCommentsByPostId(postId);
+        comments.forEach(c -> commentRepository.deleteById(c.getId()));
+        log.info("Deleted {} comments for post {}", comments.size(), postId);
+    }
 }

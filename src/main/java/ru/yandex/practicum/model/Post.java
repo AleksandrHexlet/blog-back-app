@@ -7,47 +7,38 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDateTime;
 
 /**
- * Post entity представляет запись блога в системе.
+ * Post entity - неизменяемая запись (record) блога
  * <p>
- * Реализована как Java 21 record для обеспечения immutability,
- * автоматической генерации equals/hashCode/toString и других методов.
- * <p>
- * Использует Spring Data JDBC аннотации для маппинга на таблицу posts
- * в PostgreSQL базе данных.
- * <p>
- * Поля:
- * - id: Уникальный идентификатор поста (primary key)
- * - title: Заголовок поста (не может быть null или пустым)
- * - text: Основной текст поста (не может быть null или пустым)
- * - authorId: ID автора поста (может быть null)
- * - likesCount: Количество лайков (по умолчанию 0)
- * - image: Бинарные данные изображения для поста (может быть null)
- * - createdAt: Временная метка создания поста
- * - updatedAt: Временная метка последнего обновления
- *
- * @author Alex
- * @since 1.0.0
+ * Поля соответствуют таблице 'posts' в PostgreSQL БД
  */
 @Table("posts")
 public record Post(
-        @Id Long id,
-        @Column("title") String title,
-        @Column("text") String text,
-        @Column("author_id") Long authorId,
-        @Column("likes_count") Integer likesCount,
+        @Id
+        Long id,
+
+        @Column("title")
+        String title,
+
+        @Column("text")
+        String text,
+
+        @Column("author_id")
+        Long authorId,
+
+        @Column("likes_count")
+        Integer likesCount,
+
         @Column("image")
         byte[] image,
+
         @Column("created_at")
         LocalDateTime createdAt,
-        @Column("updated_at")
-        LocalDateTime updatedAt) {
 
+        @Column("updated_at")
+        LocalDateTime updatedAt
+) {
     /**
-     * Compact constructor для валидации данных поста.
-     * <p>
-     * Проверяет корректность основных полей перед созданием объекта.
-     *
-     * @throws IllegalArgumentException если title или text пусты/null
+     * Compact constructor для валидации
      */
     public Post {
         if (title == null || title.isBlank()) {
@@ -59,20 +50,73 @@ public record Post(
     }
 
     /**
-     * Проверяет имеет ли пост изображение.
-     *
-     * @return true если в посте есть бинарные данные изображения
+     * Factory метод для создания нового поста
      */
-    public boolean hasImage() {
-        return image != null & image.length > 0;
+    public static Post create(String title, String text, Long authorId) {
+        return new Post(
+                null,
+                title,
+                text,
+                authorId,
+                0,
+                null,
+                LocalDateTime.now(),
+                LocalDateTime.now()
+        );
     }
 
     /**
-     * Возвращает размер изображения в байтах.
-     *
-     * @return размер изображения или 0 если изображения нет
+     * Создает копию поста с обновленными значениями
      */
-    public int getImageSize() {
-        return image != null ? image.length : 0;
+    public Post withLikes(Integer newLikesCount) {
+        return new Post(
+                this.id,
+                this.title,
+                this.text,
+                this.authorId,
+                newLikesCount,
+                this.image,
+                this.createdAt,
+                LocalDateTime.now()
+        );
+    }
+
+    /**
+     * Создает копию поста с обновленным текстом
+     */
+    public Post withText(String newText) {
+        return new Post(
+                this.id,
+                this.title,
+                newText,
+                this.authorId,
+                this.likesCount,
+                this.image,
+                this.createdAt,
+                LocalDateTime.now()
+        );
+    }
+
+    /**
+     * Создает копию поста с обновленным изображением
+     */
+    public Post withImage(byte[] newImage) {
+        return new Post(
+                this.id,
+                this.title,
+                this.text,
+                this.authorId,
+                this.likesCount,
+                newImage,
+                this.createdAt,
+                LocalDateTime.now()
+        );
+    }
+
+    /**
+     * Проверяет имеет ли пост изображение
+     */
+    public boolean hasImage() {
+        return image != null && !(image.length < 0);
     }
 }

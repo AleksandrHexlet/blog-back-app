@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import ru.yandex.practicum.dto.ErrorResponse;
+
 import java.util.NoSuchElementException;
 /**
  * GlobalExceptionHandler обеспечивает единообразную обработку всех исключений
@@ -36,9 +38,9 @@ public class GlobalExceptionHandler {
             WebRequest request
     ) {
         log.warn("Entity not found: {}", ex.getMessage());
-        ErrorResponse error = ErrorResponse.now(
+        ErrorResponse error = new ErrorResponse(
+                ex.getMessage(),
                 HttpStatus.NOT_FOUND.value(),
-                "Entity not found",
                 request.getDescription(false).replace("uri=", "")
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -58,9 +60,9 @@ public class GlobalExceptionHandler {
             WebRequest request
     ) {
         log.warn("Invalid argument: {}", ex.getMessage());
-        ErrorResponse error = ErrorResponse.now(
-                HttpStatus.BAD_REQUEST.value(),
+        ErrorResponse error = new ErrorResponse(
                 ex.getMessage(),
+                HttpStatus.BAD_REQUEST.value(),
                 request.getDescription(false).replace("uri=", "")
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -80,11 +82,10 @@ public class GlobalExceptionHandler {
             WebRequest request
     ) {
         log.error("Unexpected error", ex);
-        ErrorResponse error = ErrorResponse.now(
+        ErrorResponse error = new ErrorResponse(
+                ex.getMessage(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Internal server error",
-                request.getDescription(false).replace("uri=", ""),
-                ex.getMessage()
+                request.getDescription(false).replace("uri=", "")
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }

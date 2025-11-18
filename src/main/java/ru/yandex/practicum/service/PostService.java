@@ -4,7 +4,7 @@ import ru.yandex.practicum.dto.PostsResponse;
 import java.util.List;
 import java.util.Optional;
 /**
- * PostService интерфейс определяет договор для работы с постами.
+ * PostService интерфейс определяет контракт для работы с постами.
  *
  * Содержит все операции для CRUD и специфичные бизнес-операции с постами.
  *
@@ -23,8 +23,6 @@ public interface PostService {
     PostsResponse getAllPosts(String search, int pageNumber, int pageSize);
 /**
  * Получает пост по ID.
- Service Layer
- PostService.java
  *
  * @param id ID поста
  * @return Optional с полной информацией о посте
@@ -49,7 +47,7 @@ public interface PostService {
      * @param tags новый список тегов
      * @return DTO обновленного поста
      */
-    PostDetailDto updatePost(Long id, String title, String text, List&lt;String&gt; tags)
+    PostDetailDto updatePost(Long id, String title, String text, List<String> tags);
     /**
      * Удаляет пост по ID.
      *
