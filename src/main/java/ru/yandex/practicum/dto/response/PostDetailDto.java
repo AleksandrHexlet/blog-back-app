@@ -1,4 +1,4 @@
-package ru.yandex.practicum.dto;
+package ru.yandex.practicum.dto.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 /**

@@ -1,12 +1,11 @@
 package ru.yandex.practicum.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.dto.PostDetailDto;
-import ru.yandex.practicum.dto.PostListItemDto;
-import ru.yandex.practicum.dto.PostsResponse;
+import ru.yandex.practicum.dto.response.PostDetailDto;
+import ru.yandex.practicum.dto.response.PostListItemDto;
+import ru.yandex.practicum.dto.response.PostsResponse;
 import ru.yandex.practicum.model.Post;
 import ru.yandex.practicum.model.PostTag;
 import ru.yandex.practicum.repository.CommentRepository;
@@ -23,14 +22,22 @@ import java.util.Optional;
 @Transactional
 public class PostServiceImpl implements PostService {
 
-    @Autowired
     private PostRepository postRepository;
 
-    @Autowired
     private PostTagRepository postTagRepository;
 
-    @Autowired
     private CommentRepository commentRepository;
+
+    /**
+     * Dependency injection for PostServiceImpl.
+     */
+    public PostServiceImpl(PostRepository postRepository,
+                           PostTagRepository postTagRepository,
+                           CommentRepository commentRepository) {
+        this.postRepository = postRepository;
+        this.postTagRepository = postTagRepository;
+        this.commentRepository = commentRepository;
+    }
 
     @Override
     public PostsResponse getAllPosts(String search, int pageNumber, int pageSize) {

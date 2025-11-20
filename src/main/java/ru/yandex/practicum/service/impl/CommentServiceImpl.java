@@ -10,7 +10,6 @@ import ru.yandex.practicum.service.CommentService;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * CommentServiceImpl - реализация CommentService
@@ -20,16 +19,19 @@ import java.util.stream.Collectors;
 @Transactional
 public class CommentServiceImpl implements CommentService {
 
-    @Autowired
     private CommentRepository commentRepository;
+
+    /**
+     * Dependency injection for CommentServiceImpl.
+     */
+    public CommentServiceImpl(CommentRepository commentRepository) {
+        this.commentRepository = commentRepository;
+    }
 
     @Override
     public List<Comment> getCommentsByPostId(Long postId) {
         log.debug("Getting all comments for post ID: {}", postId);
-        List<Comment> comments = (List<Comment>) commentRepository.findAll();
-        return comments.stream()
-                .filter(c -> c.getPostId().equals(postId))
-                .collect(Collectors.toList());
+        return commentRepository.findAllByPostId(postId);
     }
 
     @Override
@@ -76,7 +78,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public void deleteByPostId(Long postId) {
         log.debug("Deleting all comments for post ID: {}", postId);
-        List<Comment> comments = getCommentsByPostId(postId);
+        List<Comment> comments = commentRepository.findAllByPostId(postId);
         comments.forEach(c -> commentRepository.deleteById(c.getId()));
         log.info("Deleted {} comments for post {}", comments.size(), postId);
     }

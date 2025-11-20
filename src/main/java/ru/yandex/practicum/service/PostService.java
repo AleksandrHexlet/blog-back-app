@@ -1,6 +1,6 @@
 package ru.yandex.practicum.service;
-import ru.yandex.practicum.dto.PostDetailDto;
-import ru.yandex.practicum.dto.PostsResponse;
+import ru.yandex.practicum.dto.response.PostDetailDto;
+import ru.yandex.practicum.dto.response.PostsResponse;
 import java.util.List;
 import java.util.Optional;
 /**

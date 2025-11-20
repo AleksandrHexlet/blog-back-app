@@ -36,7 +36,6 @@ class CommentServiceTest {
 
     @Test
     void getCommentsByPostId_Ok() {
-        // CommentServiceImpl.getCommentsByPostId использует findAll() и фильтрует
         Comment c1 = new Comment(1L, 1L, "Comment 1", "Author 1",
                 LocalDateTime.now(), LocalDateTime.now());
         Comment c2 = new Comment(2L, 1L, "Comment 2", "Author 2",
@@ -44,7 +43,7 @@ class CommentServiceTest {
         Comment c3 = new Comment(3L, 2L, "Comment 3", "Author 3",
                 LocalDateTime.now(), LocalDateTime.now());
 
-        when(repo.findAll()).thenReturn(List.of(c1, c2, c3));
+        when(repo.findAllByPostId(1L)).thenReturn(List.of(c1, c2, c3));
 
         List<Comment> result = service.getCommentsByPostId(1L);
 
@@ -54,8 +53,8 @@ class CommentServiceTest {
                 .containsOnly(1L);
 
         // Проверяем что был вызван findAll(), а не findAllByPostId()
-        verify(repo).findAll();
-        verify(repo, never()).findAllByPostId(anyLong());
+        verify(repo).findAllByPostId(1L);
+        verify(repo, never()).findAll();
     }
 
     @Test
@@ -300,7 +299,7 @@ class CommentServiceTest {
         Comment c2 = new Comment(2L, 1L, "C2", "Author 2",
                 LocalDateTime.now(), LocalDateTime.now());
 
-        when(repo.findAll()).thenReturn(List.of(c1, c2));
+        when(repo.findAllByPostId(1L)).thenReturn(List.of(c1, c2));
 
         service.deleteByPostId(1L);
 
@@ -308,6 +307,7 @@ class CommentServiceTest {
         verify(repo, times(2)).deleteById(anyLong());
         verify(repo).deleteById(1L);
         verify(repo).deleteById(2L);
+        verify(repo).findAllByPostId(1L);
     }
 
     @Test
@@ -339,5 +339,7 @@ class CommentServiceTest {
         // Первый вызов: 2 удаления
         // Второй вызов: 1 удаление
         verify(repo, times(3)).deleteById(anyLong());
+        verify(repo).findAllByPostId(1L);
+        verify(repo).findAllByPostId(2L);
     }
 }
