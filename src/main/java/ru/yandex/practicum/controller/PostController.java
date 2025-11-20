@@ -1,5 +1,6 @@
 package ru.yandex.practicum.controller;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,65 +50,48 @@ public class PostController {
             @RequestParam(defaultValue = "") String search
     ) {
         log.info("GET /posts");
-            PostsResponse response = postService.getAllPosts(search, pageNumber, pageSize);
-            return ResponseEntity.ok(response);
+        PostsResponse response = postService.getAllPosts(search, pageNumber, pageSize);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getPost(@PathVariable Long id) {
         log.info("GET /posts/{}", id);
-            return postService.getPostById(id)
-                    .<ResponseEntity<?>>map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.status(404)
-                            .body((Object) new ErrorResponse("Not found", 404, "Post not found")));
+        return postService.getPostById(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(404)
+                        .body((Object) new ErrorResponse("Not found", 404, "Post not found")));
     }
 
     @PostMapping
-    public ResponseEntity<?> createPost(@RequestBody PostCreateRequest request) {
+    public ResponseEntity<?> createPost(@Valid @RequestBody PostCreateRequest request) {
         log.info("POST /posts");
+        PostDetailDto created = postService.createPost(
+                request.getTitle(),
+                request.getText(),
+                request.getTags() != null ? request.getTags() : Collections.emptyList()
+        );
 
-            if (request.getTitle() == null || request.getTitle().isEmpty()) {
-                return ResponseEntity.badRequest().body(new ErrorResponse("Validation error", 400, "Title required"));
-            }
-            if (request.getText() == null || request.getText().isEmpty()) {
-                return ResponseEntity.badRequest().body(new ErrorResponse("Validation error", 400, "Text required"));
-            }
-
-            PostDetailDto created = postService.createPost(
-                    request.getTitle(),
-                    request.getText(),
-                    request.getTags() != null ? request.getTags() : Collections.emptyList()
-            );
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
 
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePost(
             @PathVariable Long id,
-            @RequestBody PostUpdateRequest request
+            @Valid @RequestBody PostUpdateRequest request
     ) {
         log.info("PUT /posts/{}", id);
-            if (postService.getPostById(id).isEmpty()) {
-                return ResponseEntity.status(404).body(new ErrorResponse("Not found", 404, "Post not found"));
-            }
-
-            if (request.getTitle() == null || request.getTitle().isEmpty()) {
-                return ResponseEntity.badRequest().body(new ErrorResponse("Validation error", 400, "Title required"));
-            }
-            if (request.getText() == null || request.getText().isEmpty()) {
-                return ResponseEntity.badRequest().body(new ErrorResponse("Validation error", 400, "Text required"));
-            }
-
-            PostDetailDto updated = postService.updatePost(
-                    id,
-                    request.getTitle(),
-                    request.getText(),
-                    request.getTags() != null ? request.getTags() : Collections.emptyList()
-            );
-
-            return ResponseEntity.ok(updated);
+        if (postService.getPostById(id).isEmpty()) {
+            throw new IllegalArgumentException("Post not found with ID: " + id);
+        }
+        PostDetailDto updated = postService.updatePost(
+                id,
+                request.getTitle(),
+                request.getText(),
+                request.getTags() != null ? request.getTags() : Collections.emptyList()
+        );
+        return ResponseEntity.ok(updated);
 
     }
 
@@ -115,20 +99,25 @@ public class PostController {
     public ResponseEntity<?> deletePost(@PathVariable Long id) {
         log.info("DELETE /posts/{}", id);
 
-            if (postService.getPostById(id).isEmpty()) {
-                return ResponseEntity.status(404).body(new ErrorResponse("Not found", 404, "Post not found"));
-            }
+        if (postService.getPostById(id).isEmpty()) {
+            throw new IllegalArgumentException("Post not found with ID: " + id);
+        }
+        if (postService.getPostById(id).isEmpty()) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Not found", 404, "Post not found"));
+        }
 
-            postService.deletePost(id);
-            return ResponseEntity.noContent().build();
+        postService.deletePost(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/likes")
     public ResponseEntity<?> incrementLikes(@PathVariable Long id) {
         log.info("POST /posts/{}/likes", id);
-
-            Integer likes = postService.incrementLikes(id);
-            return ResponseEntity.ok(likes);
+        if (postService.getPostById(id).isEmpty()) {
+            throw new IllegalArgumentException("Post not found with ID: " + id);
+        }
+        Integer likes = postService.incrementLikes(id);
+        return ResponseEntity.ok(likes);
     }
 
     // ========== COMMENTS ==========
@@ -136,11 +125,11 @@ public class PostController {
     @GetMapping("/{id}/comments")
     public ResponseEntity<?> getComments(@PathVariable Long id) {
         log.info("GET /posts/{}/comments", id);
-            if (postService.getPostById(id).isEmpty()) {
-                return ResponseEntity.status(404).body(new ErrorResponse("Not found", 404, "Post not found"));
-            }
-            List<Comment> comments = commentService.getCommentsByPostId(id);
-            return ResponseEntity.ok(comments);
+        if (postService.getPostById(id).isEmpty()) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Not found", 404, "Post not found"));
+        }
+        List<Comment> comments = commentService.getCommentsByPostId(id);
+        return ResponseEntity.ok(comments);
     }
 
     @GetMapping("/{id}/comments/{commentId}")
@@ -149,28 +138,28 @@ public class PostController {
             @PathVariable Long commentId
     ) {
         log.info("GET /posts/{}/comments/{}", id, commentId);
-            return commentService.getCommentById(commentId)
-                    .filter(c -> c.getPostId().equals(id))
-                    .<ResponseEntity<?>>map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.status(404)
-                            .body((Object) new ErrorResponse("Not found", 404, "Comment not found")));
+        if (postService.getPostById(id).isEmpty()) {
+            throw new IllegalArgumentException("Post not found with ID: " + id);
+        }
+        return commentService.getCommentById(commentId)
+                .filter(c -> c.getPostId().equals(id))
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(404)
+                        .body((Object) new ErrorResponse("Not found", 404, "Comment not found")));
     }
 
     @PostMapping("/{id}/comments")
     public ResponseEntity<?> createComment(
             @PathVariable Long id,
-            @RequestBody CommentCreateRequest request
+            @Valid @RequestBody CommentCreateRequest request
     ) {
         log.info("POST /posts/{}/comments", id);
-        try {
-            if (postService.getPostById(id).isEmpty()) {
-                return ResponseEntity.status(404).body(new ErrorResponse("Not found", 404, "Post not found"));
-            }
-
-            if (request.getText() == null || request.getText().isEmpty()) {
-                return ResponseEntity.badRequest().body(new ErrorResponse("Validation error", 400, "Text required"));
-            }
-
+        if (postService.getPostById(id).isEmpty()) {
+            throw new IllegalArgumentException("Post not found with ID: " + id);
+        }
+        if (postService.getPostById(id).isEmpty()) {
+            throw new IllegalArgumentException("Post not found with ID: " + id);
+        }
             Comment comment = new Comment();
             comment.setPostId(id);
             comment.setText(request.getText());
@@ -178,34 +167,27 @@ public class PostController {
 
             Comment created = commentService.createComment(comment);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (Exception e) {
-            log.error("Error", e);
-            return ResponseEntity.status(500).body(new ErrorResponse("Server error", 500, e.getMessage()));
-        }
     }
 
     @PutMapping("/{id}/comments/{commentId}")
     public ResponseEntity<?> updateComment(
             @PathVariable Long id,
             @PathVariable Long commentId,
-            @RequestBody CommentUpdateRequest request
+            @Valid @RequestBody CommentUpdateRequest request
     ) {
         log.info("PUT /posts/{}/comments/{}", id, commentId);
-            return commentService.getCommentById(commentId)
-                    .filter(c -> c.getPostId().equals(id))
-                    .<ResponseEntity<?>>map(comment -> {
-                        if (request.getText() != null && !request.getText().isEmpty()) {
-                            comment.setText(request.getText());
-                        }
-                        if (request.getAuthor() != null && !request.getAuthor().isEmpty()) {
-                            comment.setAuthor(request.getAuthor());
-                        }
-
-                        Comment updated = commentService.updateComment(comment);
-                        return ResponseEntity.ok((Object) updated);
-                    })
-                    .orElseGet(() -> ResponseEntity.status(404)
-                            .body((Object) new ErrorResponse("Not found", 404, "Comment not found")));
+        return commentService.getCommentById(commentId)
+                .filter(c -> c.getPostId().equals(id))
+                .<ResponseEntity<?>>map(comment -> {
+                    comment.setText(request.getText());
+                    if (request.getAuthor() != null && !request.getAuthor().isEmpty()) {
+                        comment.setAuthor(request.getAuthor());
+                    }
+                    Comment updated = commentService.updateComment(comment);
+                    return ResponseEntity.ok((Object) updated);
+                })
+                .orElseGet(() -> ResponseEntity.status(404)
+                        .body((Object) new ErrorResponse("Not found", 404, "Comment not found")));
     }
 
     @DeleteMapping("/{id}/comments/{commentId}")
@@ -214,11 +196,11 @@ public class PostController {
             @PathVariable Long commentId
     ) {
         log.info("DELETE /posts/{}/comments/{}", id, commentId);
-            if (commentService.getCommentById(commentId).isEmpty()) {
-                return ResponseEntity.status(404).body(new ErrorResponse("Not found", 404, "Comment not found"));
-            }
+        if (commentService.getCommentById(commentId).isEmpty()) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Not found", 404, "Comment not found"));
+        }
 
-            commentService.deleteComment(commentId);
-            return ResponseEntity.noContent().build();
+        commentService.deleteComment(commentId);
+        return ResponseEntity.noContent().build();
     }
 }

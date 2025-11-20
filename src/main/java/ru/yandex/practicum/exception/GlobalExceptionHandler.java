@@ -2,11 +2,15 @@ package ru.yandex.practicum.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import ru.yandex.practicum.dto.ErrorResponse;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 /**
  * GlobalExceptionHandler обеспечивает единообразную обработку всех исключений
@@ -23,6 +27,38 @@ import java.util.NoSuchElementException;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * Обработка ошибок валидации из @Valid
+     *
+     * MethodArgumentNotValidException выбрасывается когда @Valid найдет нарушения
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(
+            MethodArgumentNotValidException ex
+    ) {
+        log.warn("Validation error: {}", ex.getMessage());
+
+        Map<String, Object> errors = new HashMap<>();
+        Map<String, String> fieldErrors = new HashMap<>();
+
+        // Собираем все ошибки валидации
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                fieldErrors.put(
+                        error.getField(),
+                        error.getDefaultMessage()
+                )
+        );
+
+        errors.put("status", HttpStatus.BAD_REQUEST.value());
+        errors.put("message", "Validation failed");
+        errors.put("errors", fieldErrors);
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errors);
+    }
+
 /**
  * Обрабатывает исключение когда сущность не найдена.
  *
@@ -51,22 +87,25 @@ public class GlobalExceptionHandler {
  * Возвращает HTTP 400 Bad Request.
  *
  * @param ex исключение IllegalArgumentException
- * @param request информация о веб-запросе
- * @return ResponseEntity с ErrorResponse
+ * @return ResponseEntity с status
  */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(
-            IllegalArgumentException ex,
-            WebRequest request
-    ) {
-        log.warn("Invalid argument: {}", ex.getMessage());
-        ErrorResponse error = new ErrorResponse(
-                ex.getMessage(),
-                HttpStatus.BAD_REQUEST.value(),
-                request.getDescription(false).replace("uri=", "")
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
+@ExceptionHandler(IllegalArgumentException.class)
+public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+        IllegalArgumentException ex
+) {
+    log.warn("Illegal argument: {}", ex.getMessage());
+
+    HttpStatus status = ex.getMessage().toLowerCase().contains("not found")
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("timestamp", LocalDateTime.now());
+    response.put("status", status.value());
+    response.put("message", ex.getMessage());
+
+    return ResponseEntity.status(status).body(response);
+}
 /**
  * Обрабатывает все остальные неожиданные исключения.
  *
